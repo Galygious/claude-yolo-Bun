@@ -20,7 +20,7 @@ const execAsync = promisify(exec);
  */
 function spawnAsync(command, args, options = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { shell: true, ...options });
+    const child = spawn(command, args, { ...options });
 
     child.on('error', reject);
     child.on('close', (code) => {
@@ -243,9 +243,9 @@ async function checkForUpdates() {
   try {
     debug('Checking for Claude package updates...');
 
-    // Get the latest version available on npm (async with timeout)
+    // Get the latest version available on npm (async with timeout + retries)
     const latestVersionCmd =
-      "bun --silent -e \"const r = await fetch('https://registry.npmjs.org/@anthropic-ai/claude-code/latest'); if (!r.ok) throw new Error('Registry lookup failed'); const j = await r.json(); console.log(j.version);\"";
+      "bun --silent -e \"const url='https://registry.npmjs.org/@anthropic-ai/claude-code/latest'; const sleep=(ms)=>new Promise((resolve)=>setTimeout(resolve,ms)); for (let attempt = 0; attempt < 3; attempt++) { try { const response = await fetch(url); if (response.status >= 500) throw new Error('Registry 5xx error: ' + response.status); if (response.status >= 400) throw new Error('Registry client error: ' + response.status); const data = await response.json(); console.log(data.version); process.exit(0); } catch (error) { const isClientError = String(error.message || '').includes('client error'); if (isClientError || attempt === 2) throw error; await sleep(250 * (2 ** attempt)); } }\"";
     const latestVersion = await execWithTimeout(latestVersionCmd, TIMEOUTS.PACKAGE_REGISTRY_VIEW);
 
     // Update the timestamp after successful version check

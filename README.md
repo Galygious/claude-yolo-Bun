@@ -78,7 +78,7 @@ For even easier mode management, use the included `cl` wrapper script (works on 
 ```bash
 # After bun link, the cl wrapper is available globally
 # Or copy manually to your PATH
-cp $(bun pm bin)/cl /usr/local/bin/cl
+cp $(bun pm bin -g)/cl /usr/local/bin/cl
 chmod +x /usr/local/bin/cl
 
 # Now you can use:

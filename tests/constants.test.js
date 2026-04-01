@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach, spyOn, mock } from 'bun:test';
 import {
   COLORS,
   RED,
@@ -125,33 +125,26 @@ describe('constants', () => {
   });
 
   describe('logError', () => {
-    let originalLog;
-    let originalError;
-    let consoleLogMock;
-    let consoleErrorMock;
+    let consoleLogSpy;
+    let consoleErrorSpy;
 
     beforeEach(() => {
-      originalLog = console.log;
-      originalError = console.error;
-      consoleLogMock = mock(() => {});
-      consoleErrorMock = mock(() => {});
-      console.log = consoleLogMock;
-      console.error = consoleErrorMock;
+      consoleLogSpy = spyOn(console, 'log').mockImplementation(() => {});
+      consoleErrorSpy = spyOn(console, 'error').mockImplementation(() => {});
     });
 
     afterEach(() => {
-      console.log = originalLog;
-      console.error = originalError;
+      mock.restore();
     });
 
     it('should log errors to stderr', () => {
       logError('test error');
-      expect(consoleErrorMock).toHaveBeenCalled();
+      expect(consoleErrorSpy).toHaveBeenCalled();
     });
 
     it('should log warnings to stderr', () => {
       logError('test warning', ErrorSeverity.WARNING);
-      expect(consoleErrorMock).toHaveBeenCalled();
+      expect(consoleErrorSpy).toHaveBeenCalled();
     });
   });
 });
