@@ -134,6 +134,7 @@ describe('constants', () => {
     });
 
     afterEach(() => {
+      delete process.env.DEBUG;
       mock.restore();
     });
 
@@ -145,6 +146,13 @@ describe('constants', () => {
     it('should log warnings to stderr', () => {
       logError('test warning', ErrorSeverity.WARNING);
       expect(consoleErrorSpy).toHaveBeenCalled();
+    });
+
+    it('should log debug messages to stdout when DEBUG is set', () => {
+      process.env.DEBUG = '1';
+      logError('test debug', ErrorSeverity.DEBUG);
+      expect(consoleLogSpy).toHaveBeenCalled();
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
     });
   });
 });

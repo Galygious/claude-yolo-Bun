@@ -4,12 +4,8 @@ import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
 import { fileURLToPath } from 'url';
-import { exec, spawn } from 'child_process';
-import { promisify } from 'util';
+import { spawn } from 'child_process';
 import readline from 'readline';
-
-// Promisified exec for async operations
-const execAsync = promisify(exec);
 
 /**
  * Run a command with spawn (for interactive/inherited stdio)
@@ -33,23 +29,6 @@ function spawnAsync(command, args, options = {}) {
   });
 }
 
-/**
- * Execute command with timeout (async version)
- * @param {string} command - Command to execute
- * @param {number} timeout - Timeout in milliseconds
- * @returns {Promise<string>} Command output
- */
-async function execWithTimeout(command, timeout) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-  try {
-    const { stdout } = await execAsync(command, { signal: controller.signal });
-    return stdout.trim();
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
 import { showYoloActivated, showSafeActivated, showModeStatus, YOLO_ART } from './ascii-art.js';
 import {
   RED,
@@ -232,6 +211,77 @@ function updateLastCheckTimestamp() {
   }
 }
 
+function getRegistryFromBunfig() {
+  const bunfigPath = path.join(nodeModulesDir, 'bunfig.toml');
+  if (!fs.existsSync(bunfigPath)) {
+    return null;
+  }
+
+  try {
+    const bunfig = fs.readFileSync(bunfigPath, 'utf8');
+    const match = bunfig.match(/^\s*registry\s*=\s*["']([^"']+)["']/m);
+    return match?.[1] || null;
+  } catch (error) {
+    debug(`Could not read bunfig.toml registry: ${error.message}`);
+    return null;
+  }
+}
+
+function getRegistryUrl() {
+  const registry =
+    process.env.npm_config_registry ||
+    process.env.NPM_CONFIG_REGISTRY ||
+    getRegistryFromBunfig() ||
+    'https://registry.npmjs.org/';
+  return registry.endsWith('/') ? registry : `${registry}/`;
+}
+
+function getNpmAuthToken() {
+  return process.env.NPM_TOKEN || process.env.npm_config__authToken || null;
+}
+
+async function fetchLatestClaudeVersion(timeoutMs) {
+  const registry = getRegistryUrl();
+  const packagePath = '@anthropic-ai%2fclaude-code/latest';
+  const metadataUrl = `${registry}${packagePath}`;
+  const authToken = getNpmAuthToken();
+  const headers = authToken ? { Authorization: `Bearer ${authToken}` } : {};
+  let lastError;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(metadataUrl, {
+        headers,
+        signal: controller.signal
+      });
+
+      if (response.status >= 500) {
+        throw new Error(`Registry 5xx error: ${response.status}`);
+      }
+      if (response.status >= 400) {
+        throw new Error(`Registry client error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.version;
+    } catch (error) {
+      const isClientError = String(error.message || '').includes('client error');
+      if (isClientError || attempt === 2) {
+        throw error;
+      }
+      lastError = error;
+      await new Promise((resolve) => setTimeout(resolve, 250 * 2 ** attempt));
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  throw lastError;
+}
+
 // Check for updates to Claude package (with rate limiting)
 async function checkForUpdates() {
   // Rate limiting: only check once per 24 hours
@@ -243,10 +293,7 @@ async function checkForUpdates() {
   try {
     debug('Checking for Claude package updates...');
 
-    // Get the latest version available on npm (async with timeout + retries)
-    const latestVersionCmd =
-      "bun --silent -e \"const url='https://registry.npmjs.org/@anthropic-ai/claude-code/latest'; const sleep=(ms)=>new Promise((resolve)=>setTimeout(resolve,ms)); for (let attempt = 0; attempt < 3; attempt++) { try { const response = await fetch(url); if (response.status >= 500) throw new Error('Registry 5xx error: ' + response.status); if (response.status >= 400) throw new Error('Registry client error: ' + response.status); const data = await response.json(); console.log(data.version); process.exit(0); } catch (error) { const isClientError = String(error.message || '').includes('client error'); if (isClientError || attempt === 2) throw error; await sleep(250 * (2 ** attempt)); } }\"";
-    const latestVersion = await execWithTimeout(latestVersionCmd, TIMEOUTS.PACKAGE_REGISTRY_VIEW);
+    const latestVersion = await fetchLatestClaudeVersion(TIMEOUTS.PACKAGE_REGISTRY_VIEW);
 
     // Update the timestamp after successful version check
     updateLastCheckTimestamp();

@@ -77,9 +77,16 @@ For even easier mode management, use the included `cl` wrapper script (works on 
 
 ```bash
 # After bun link, the cl wrapper is available globally
-# Or copy manually to your PATH
+# macOS/Linux (Unix): copy the cl wrapper manually to your PATH
 cp $(bun pm bin -g)/cl /usr/local/bin/cl
 chmod +x /usr/local/bin/cl
+```
+
+```powershell
+# Windows PowerShell: copy the cl wrapper into a folder already on PATH
+$bin = bun pm bin -g
+Copy-Item "$bin\\cl" "$HOME\\bin\\cl" -Force
+```
 
 # Now you can use:
 cl /YON      # Switch to YOLO mode AND start Claude
@@ -199,11 +206,13 @@ Anthropic designed these safety checks for good reason. Only use YOLO mode if yo
    ```
 
 2. Install dependencies:
+
    ```bash
    bun install
    ```
 
 3. Link locally for testing:
+
    ```bash
    bun link
    ```
@@ -219,14 +228,23 @@ Anthropic designed these safety checks for good reason. Only use YOLO mode if yo
 
 2. Update the version number in `package.json`.
 
-3. Publish to npm via Bun:
+3. Create and annotate the matching Git tag:
+
+   ```bash
+   git tag -a vX.Y.Z -m "release vX.Y.Z"
+   ```
+
+4. Publish to npm via Bun:
+
    ```bash
    bun publish --otp=CODE
    ```
 
-4. Push changes to GitHub:
+5. Push changes to GitHub:
+
    ```bash
-   git push origin main --tags
+   git push origin main
+   git push origin --tags
    ```
 
 ### Version Guidelines
