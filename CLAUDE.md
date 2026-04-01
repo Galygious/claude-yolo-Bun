@@ -22,16 +22,17 @@ cl mcp list           # Pass subcommands to Claude
 
 ### Development
 ```bash
-npm install           # Install dependencies
-npm link              # Link for local testing
-npm run lint          # Check code quality
-npm test              # Run tests
+bun install           # Install dependencies
+bun link              # Link for local testing
+bun run lint          # Check code quality
+bun test              # Run tests
 ```
 
 ### Publishing (Manual - MFA required)
 ```bash
-npm version patch|minor|major
-npm publish --otp=CODE
+# 1) Update package.json version manually
+# 2) Publish through Bun
+bun publish --otp=CODE
 git push origin main --tags
 ```
 
