@@ -13,9 +13,9 @@ function Write-Colored($Text, $Color) {
     Write-Host "$Color$Text$RESET"
 }
 
-# Check if Node.js is installed
-if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
-    Write-Colored "Error: Node.js is not installed. Please install Node.js first." $RED
+# Check if Bun is installed
+if (-not (Get-Command bun -ErrorAction SilentlyContinue)) {
+    Write-Colored "Error: Bun is not installed. Please install Bun first." $RED
     exit 1
 }
 
@@ -27,4 +27,4 @@ if (-not (Test-Path $scriptPath)) {
 }
 
 # Run the main script with ALL arguments passed through
-& node $scriptPath @args
+& bun $scriptPath @args

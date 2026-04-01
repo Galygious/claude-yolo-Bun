@@ -16,11 +16,13 @@ A wrapper for the Claude CLI that can run in YOLO mode (bypassing all safety che
 
 ## Installation
 
-### Option 1: Install from npm (Recommended)
+> Bun is the canonical package manager/runtime for this project. npm workflows are intentionally not documented as primary paths.
+
+### Option 1: Install with Bun (Recommended)
 
 ```bash
-# Install globally from npm
-npm install -g claude-yolo-extended
+# Install globally with Bun
+bun add -g claude-yolo-extended
 ```
 
 ### Option 2: Install from source
@@ -31,10 +33,10 @@ git clone https://github.com/jslitzkerttcu/claude-yolo.git
 cd claude-yolo
 
 # Install dependencies
-npm install
+bun install
 
 # Link globally to use the command anywhere
-npm link
+bun link
 ```
 
 The first time you run `claude-yolo-extended`, you will be presented with a consent prompt explaining the security implications. You must explicitly agree to continue.
@@ -74,10 +76,17 @@ claude-yolo-extended mode
 For even easier mode management, use the included `cl` wrapper script (works on both Windows and Unix systems):
 
 ```bash
-# After npm link, the cl wrapper is available globally
-# Or copy manually to your PATH
-cp node_modules/claude-yolo-extended/bin/cl /usr/local/bin/cl
+# After bun link, the cl wrapper is available globally
+# macOS/Linux (Unix): copy the cl wrapper manually to your PATH
+cp $(bun pm bin -g)/cl /usr/local/bin/cl
 chmod +x /usr/local/bin/cl
+```
+
+```powershell
+# Windows PowerShell: copy the cl wrapper into a folder already on PATH
+$bin = bun pm bin -g
+Copy-Item "$bin\\cl" "$HOME\\bin\\cl" -Force
+```
 
 # Now you can use:
 cl /YON      # Switch to YOLO mode AND start Claude
@@ -163,10 +172,10 @@ This will show additional information about:
 
 Claude YOLO automatically checks for updates to the Claude package each time it runs:
 
-1. When you run `claude-yolo-extended`, it checks for the latest version of `@anthropic-ai/claude-code` on npm
+1. When you run `claude-yolo-extended`, it checks the npm registry for the latest version of `@anthropic-ai/claude-code`
 2. If your installed version is outdated, it will:
    - Update your package.json with the latest version
-   - Run npm install to get the newest version
+   - Run bun install to get the newest version
    - Notify you that an update was applied
 3. This ensures you're always using the latest Claude CLI features
 
@@ -197,13 +206,15 @@ Anthropic designed these safety checks for good reason. Only use YOLO mode if yo
    ```
 
 2. Install dependencies:
+
    ```bash
-   npm install
+   bun install
    ```
 
 3. Link locally for testing:
+
    ```bash
-   npm link
+   bun link
    ```
 
 4. Test your changes:
@@ -215,26 +226,25 @@ Anthropic designed these safety checks for good reason. Only use YOLO mode if yo
 
 1. Make your changes and test thoroughly
 
-2. Update the version number:
+2. Update the version number in `package.json`.
+
+3. Create and annotate the matching Git tag:
+
    ```bash
-   # For bug fixes (1.8.0 -> 1.8.1)
-   npm version patch
-   
-   # For new features (1.8.0 -> 1.9.0)
-   npm version minor
-   
-   # For breaking changes (1.8.0 -> 2.0.0)
-   npm version major
+   git tag -a vX.Y.Z -m "release vX.Y.Z"
    ```
 
-3. Publish to npm:
+4. Publish to npm via Bun:
+
    ```bash
-   npm publish
+   bun publish --otp=CODE
    ```
 
-4. Push changes to GitHub:
+5. Push changes to GitHub:
+
    ```bash
-   git push origin main --tags
+   git push origin main
+   git push origin --tags
    ```
 
 ### Version Guidelines

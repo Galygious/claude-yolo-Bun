@@ -12,12 +12,12 @@ Thank you for your interest in contributing!
 
 2. Install dependencies:
    ```bash
-   npm install
+   bun install
    ```
 
 3. Link for local development:
    ```bash
-   npm link
+   bun link
    ```
 
 ## Development Workflow
@@ -42,13 +42,13 @@ Before submitting a PR, ensure:
 
 ```bash
 # Run linting
-npm run lint
+bun run lint
 
 # Run tests
-npm test
+bun test
 
 # Check formatting
-npm run format:check
+bun run format:check
 ```
 
 ### Commit Guidelines

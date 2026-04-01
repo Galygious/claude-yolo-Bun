@@ -94,7 +94,7 @@ case "$1" in
                 claude-yolo-extended "$@"
             else
                 echo -e "${RED}Error: claude-yolo-extended is not installed${RESET}"
-                echo -e "Install it with: ${CYAN}npm install -g claude-yolo-extended${RESET}"
+                echo -e "Install it with: ${CYAN}bun add -g claude-yolo-extended${RESET}"
                 exit 1
             fi
         else
@@ -108,7 +108,7 @@ case "$1" in
                     claude-yolo-extended --safe "$@"
                 else
                     echo -e "${RED}Error: Neither claude nor claude-yolo-extended is installed${RESET}"
-                    echo -e "Install claude-yolo-extended with: ${CYAN}npm install -g claude-yolo-extended${RESET}"
+                    echo -e "Install claude-yolo-extended with: ${CYAN}bun add -g claude-yolo-extended${RESET}"
                     exit 1
                 fi
             fi

@@ -1,7 +1,13 @@
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, spyOn, mock } from 'bun:test';
 import {
   COLORS,
-  RED, YELLOW, CYAN, GREEN, ORANGE, RESET, BOLD,
+  RED,
+  YELLOW,
+  CYAN,
+  GREEN,
+  ORANGE,
+  RESET,
+  BOLD,
   VALID_MODES,
   STATE_FILE,
   UPDATE_CHECK_FILE,
@@ -11,8 +17,7 @@ import {
   TIMEOUTS,
   MAX_TRAVERSAL_DEPTH,
   ErrorSeverity,
-  logError,
-  handleFatalError
+  logError
 } from '../lib/constants.js';
 import os from 'os';
 import path from 'path';
@@ -97,9 +102,9 @@ describe('constants', () => {
 
   describe('TIMEOUTS', () => {
     it('should have reasonable timeout values', () => {
-      expect(TIMEOUTS.NPM_VIEW).toBe(30000);
-      expect(TIMEOUTS.NPM_INSTALL).toBe(300000);
-      expect(TIMEOUTS.NPM_ROOT).toBe(10000);
+      expect(TIMEOUTS.PACKAGE_REGISTRY_VIEW).toBe(30000);
+      expect(TIMEOUTS.PACKAGE_INSTALL).toBe(300000);
+      expect(TIMEOUTS.GLOBAL_BIN_LOOKUP).toBe(10000);
       expect(TIMEOUTS.DEFAULT).toBe(120000);
     });
   });
@@ -120,17 +125,17 @@ describe('constants', () => {
   });
 
   describe('logError', () => {
-    let consoleSpy;
+    let consoleLogSpy;
     let consoleErrorSpy;
 
     beforeEach(() => {
-      consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      consoleLogSpy = spyOn(console, 'log').mockImplementation(() => {});
+      consoleErrorSpy = spyOn(console, 'error').mockImplementation(() => {});
     });
 
     afterEach(() => {
-      consoleSpy.mockRestore();
-      consoleErrorSpy.mockRestore();
+      delete process.env.DEBUG;
+      mock.restore();
     });
 
     it('should log errors to stderr', () => {
@@ -141,6 +146,13 @@ describe('constants', () => {
     it('should log warnings to stderr', () => {
       logError('test warning', ErrorSeverity.WARNING);
       expect(consoleErrorSpy).toHaveBeenCalled();
+    });
+
+    it('should log debug messages to stdout when DEBUG is set', () => {
+      process.env.DEBUG = '1';
+      logError('test debug', ErrorSeverity.DEBUG);
+      expect(consoleLogSpy).toHaveBeenCalled();
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
     });
   });
 });
