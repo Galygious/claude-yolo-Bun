@@ -1,7 +1,13 @@
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
 import {
   COLORS,
-  RED, YELLOW, CYAN, GREEN, ORANGE, RESET, BOLD,
+  RED,
+  YELLOW,
+  CYAN,
+  GREEN,
+  ORANGE,
+  RESET,
+  BOLD,
   VALID_MODES,
   STATE_FILE,
   UPDATE_CHECK_FILE,
@@ -11,8 +17,7 @@ import {
   TIMEOUTS,
   MAX_TRAVERSAL_DEPTH,
   ErrorSeverity,
-  logError,
-  handleFatalError
+  logError
 } from '../lib/constants.js';
 import os from 'os';
 import path from 'path';
@@ -97,9 +102,9 @@ describe('constants', () => {
 
   describe('TIMEOUTS', () => {
     it('should have reasonable timeout values', () => {
-      expect(TIMEOUTS.NPM_VIEW).toBe(30000);
-      expect(TIMEOUTS.NPM_INSTALL).toBe(300000);
-      expect(TIMEOUTS.NPM_ROOT).toBe(10000);
+      expect(TIMEOUTS.PACKAGE_REGISTRY_VIEW).toBe(30000);
+      expect(TIMEOUTS.PACKAGE_INSTALL).toBe(300000);
+      expect(TIMEOUTS.GLOBAL_BIN_LOOKUP).toBe(10000);
       expect(TIMEOUTS.DEFAULT).toBe(120000);
     });
   });
@@ -120,27 +125,33 @@ describe('constants', () => {
   });
 
   describe('logError', () => {
-    let consoleSpy;
-    let consoleErrorSpy;
+    let originalLog;
+    let originalError;
+    let consoleLogMock;
+    let consoleErrorMock;
 
     beforeEach(() => {
-      consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      originalLog = console.log;
+      originalError = console.error;
+      consoleLogMock = mock(() => {});
+      consoleErrorMock = mock(() => {});
+      console.log = consoleLogMock;
+      console.error = consoleErrorMock;
     });
 
     afterEach(() => {
-      consoleSpy.mockRestore();
-      consoleErrorSpy.mockRestore();
+      console.log = originalLog;
+      console.error = originalError;
     });
 
     it('should log errors to stderr', () => {
       logError('test error');
-      expect(consoleErrorSpy).toHaveBeenCalled();
+      expect(consoleErrorMock).toHaveBeenCalled();
     });
 
     it('should log warnings to stderr', () => {
       logError('test warning', ErrorSeverity.WARNING);
-      expect(consoleErrorSpy).toHaveBeenCalled();
+      expect(consoleErrorMock).toHaveBeenCalled();
     });
   });
 });

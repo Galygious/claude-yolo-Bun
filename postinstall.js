@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import readline from 'readline';
 import { RED, YELLOW, CYAN, GREEN, RESET, BOLD } from './lib/constants.js';
@@ -40,7 +40,7 @@ rl.question(`${YELLOW}Do you consent to installing claude-yolo with these modifi
   } else {
     console.log(`\n${CYAN}Installation cancelled by user.${RESET}`);
     console.log(`If you want the official Claude CLI with normal safety features, run:`);
-    console.log(`npm install -g @anthropic-ai/claude-code`);
+    console.log(`bun add -g @anthropic-ai/claude-code`);
     process.exit(1); // Error exit code to abort installation
   }
 });

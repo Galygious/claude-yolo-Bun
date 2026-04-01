@@ -244,8 +244,9 @@ async function checkForUpdates() {
     debug('Checking for Claude package updates...');
 
     // Get the latest version available on npm (async with timeout)
-    const latestVersionCmd = 'npm view @anthropic-ai/claude-code version';
-    const latestVersion = await execWithTimeout(latestVersionCmd, TIMEOUTS.NPM_VIEW);
+    const latestVersionCmd =
+      "bun --silent -e \"const r = await fetch('https://registry.npmjs.org/@anthropic-ai/claude-code/latest'); if (!r.ok) throw new Error('Registry lookup failed'); const j = await r.json(); console.log(j.version);\"";
+    const latestVersion = await execWithTimeout(latestVersionCmd, TIMEOUTS.PACKAGE_REGISTRY_VIEW);
 
     // Update the timestamp after successful version check
     updateLastCheckTimestamp();
@@ -258,30 +259,6 @@ async function checkForUpdates() {
 
     debug(`Claude version from package.json: ${currentVersion}`);
 
-    // Get the global Claude version if available
-    let globalVersion;
-    if (globalClaudeDir) {
-      try {
-        const globalPackageJsonPath = path.join(globalClaudeDir, 'package.json');
-        if (fs.existsSync(globalPackageJsonPath)) {
-          const globalPackageJson = JSON.parse(fs.readFileSync(globalPackageJsonPath, 'utf8'));
-          globalVersion = globalPackageJson.version;
-          debug(`Global Claude version: ${globalVersion}`);
-
-          // If global version is latest, inform user
-          if (globalVersion === latestVersion) {
-            debug(`Global Claude installation is already the latest version`);
-          } else if (globalVersion && latestVersion) {
-            debug(
-              `Global Claude installation (${globalVersion}) differs from latest (${latestVersion})`
-            );
-          }
-        }
-      } catch (err) {
-        debug(`Error getting global Claude version: ${err.message}`);
-      }
-    }
-
     // If using a specific version (not "latest"), and it's out of date, update
     // Use semantic version comparison to correctly handle cases like 2.0.10 > 2.0.9
     if (currentVersion !== 'latest' && compareVersions(currentVersion, latestVersion) < 0) {
@@ -293,48 +270,25 @@ async function checkForUpdates() {
       packageJson.dependencies['@anthropic-ai/claude-code'] = latestVersion;
       fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
-      // Run npm install (async with inherited stdio)
-      console.log('Running npm install to update dependencies...');
-      await spawnAsync('npm', ['install'], { stdio: 'inherit', cwd: nodeModulesDir });
+      // Run bun install (async with inherited stdio)
+      console.log('Running bun install to update dependencies...');
+      await spawnAsync('bun', ['install'], { stdio: 'inherit', cwd: nodeModulesDir });
       console.log('Update complete!');
     } else if (currentVersion === 'latest') {
       // If using "latest", just make sure we have the latest version installed
       debug(
-        "Using 'latest' tag in package.json, running npm install to ensure we have the newest version"
+        "Using 'latest' tag in package.json, running bun install to ensure we have the newest version"
       );
-      await spawnAsync('npm', ['install'], { stdio: 'inherit', cwd: nodeModulesDir });
+      await spawnAsync('bun', ['install'], { stdio: 'inherit', cwd: nodeModulesDir });
     }
   } catch (error) {
     logError(`Failed to check for updates: ${error.message}`, ErrorSeverity.WARNING, error);
   }
 }
 
-// Try to find global installation of Claude CLI first (async)
-let globalClaudeDir;
-try {
-  const globalNodeModules = await execWithTimeout('npm -g root', TIMEOUTS.NPM_ROOT);
-  debug(`Global node_modules: ${globalNodeModules}`);
-  const potentialGlobalDir = path.join(globalNodeModules, '@anthropic-ai', 'claude-code');
-
-  if (fs.existsSync(potentialGlobalDir)) {
-    globalClaudeDir = potentialGlobalDir;
-    debug(`Found global Claude installation at: ${globalClaudeDir}`);
-  }
-} catch (error) {
-  logError(
-    `Could not find global Claude installation: ${error.message}`,
-    ErrorSeverity.DEBUG,
-    error
-  );
-}
-
-// Path to the local Claude CLI installation
-const localClaudeDir = path.join(nodeModulesDir, 'node_modules', '@anthropic-ai', 'claude-code');
-
-// Prioritize global installation, fall back to local
-const claudeDir = globalClaudeDir || localClaudeDir;
+// Bun-first resolution: always use this package's managed dependency tree
+const claudeDir = path.join(nodeModulesDir, 'node_modules', '@anthropic-ai', 'claude-code');
 debug(`Using Claude installation from: ${claudeDir}`);
-debug(`Using ${claudeDir === globalClaudeDir ? 'GLOBAL' : 'LOCAL'} Claude installation`);
 
 // Check for both .js and .mjs versions of the CLI
 const mjsPath = path.join(claudeDir, 'cli.mjs');
